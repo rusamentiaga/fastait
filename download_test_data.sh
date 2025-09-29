@@ -24,4 +24,11 @@ unzip -o "$ZIP_FILE" -d "$DEST_DIR"
 echo "Cleaning up..."
 rm "$ZIP_FILE"
 
+# Recursively unzip any nested zip files
+echo "Extracting nested zip files..."
+find "$DEST_DIR" -name "*.zip" | while read NESTED_ZIP; do
+    unzip -o "$NESTED_ZIP" -d "$(dirname "$NESTED_ZIP")"
+    rm "$NESTED_ZIP"
+done
+
 echo "Download and extraction completed successfully."
