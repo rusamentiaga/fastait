@@ -2,7 +2,7 @@ import torch
 
 def ppt(images: torch.Tensor) -> torch.Tensor:
     """
-    Compute per-pixel FFT phase along the time dimension.
+    Compute Pulse Phase Thermography phase.
 
     Args:
         images (torch.Tensor): Input tensor (N, H, W)
