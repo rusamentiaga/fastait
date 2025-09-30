@@ -35,8 +35,6 @@ def load_csv_folder(folder_path, dtype=torch.float32, use_cache=True, verbose=Fa
             print(f"Loading data from cache: {cache_file}")
         return torch.load(cache_file)    
     
-    images = []
-    
     # Sort CSV files naturally
     csv_files = natsorted([f for f in os.listdir(folder_path) if f.endswith(".csv")])
     if not csv_files:
@@ -44,6 +42,7 @@ def load_csv_folder(folder_path, dtype=torch.float32, use_cache=True, verbose=Fa
     
     iterator = tqdm(csv_files, desc="Loading CSV images") if verbose else csv_files
     
+    images = []
     for file in iterator:
         csv_path = os.path.join(folder_path, file)
         img_array = np.loadtxt(csv_path, delimiter=',')
