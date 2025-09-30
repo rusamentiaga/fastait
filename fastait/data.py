@@ -44,6 +44,6 @@ def extract_cooling(images: torch.Tensor) -> torch.Tensor:
     mean_per_image = images.mean(dim=(1, 2))
     max_index = mean_per_image.argmax().item()
     if max_index + 1 >= images.shape[0]:
-        raise ValueError("No cooling events found after the peak mean pixel value.")
+        raise ValueError("No cooling data found after the peak mean pixel value.")
 
     return images[max_index+1:]
