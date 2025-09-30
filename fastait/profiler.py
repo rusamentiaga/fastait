@@ -2,6 +2,13 @@ import time
 import torch
 
 class TimeProfiler:
+    """
+    Context manager for profiling execution time of code blocks.
+    Args:
+        name (str, optional): Name to identify the timed block in logs. Defaults to None.
+        cuda_sync (bool, optional): Whether to synchronize CUDA before timing. Defaults to True.
+        logger (callable, optional): Function to log the timing result. Defaults to
+    """
     def __init__(self, name=None, cuda_sync=True, logger=print):
         self.name = name
         self.dt_ms = None
