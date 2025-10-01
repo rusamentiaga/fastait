@@ -38,41 +38,35 @@ methods = {
     "PPT": ("test_benchmark_ppt", ""),
 }
 
-H = [256, 512]
-N = [500, 1000, 2000]
-ndtypes = [torch.float32, torch.float64]
-ndevices = [torch.device('cpu')]
-if torch.cuda.is_available():
-	ndevices.append(torch.device('cuda'))
+def run_benchmark(H, N, ndtypes, ndevices, methods):
+    results_all = []
+    results_by_method = {m: [] for m in methods}
+    total_iters = len(ndevices) * len(N) * len(H) * len(ndtypes)
+    bar = tqdm(product(ndevices, N, H, ndtypes), total=total_iters)
+    for d, n, h, t in bar:
+        images = torch.randn(n, h, h, dtype=t, device=d)
+        dtype_name = str(t).replace('torch.', '') 
+        sub_label = f'({n}, {h}, {h})'
+        bar.set_description(f"Testing {sub_label} {d} ({dtype_name})")
 
-results_all = []
-results_by_method = {m: [] for m in methods}
-total_iters = len(ndevices) * len(N) * len(H) * len(ndtypes)
-bar = tqdm(product(ndevices, N, H, ndtypes), total=total_iters)
-for d, n, h, t in bar:
-    images = torch.randn(n, h, h, dtype=t, device=d)
-    dtype_name = str(t).replace('torch.', '') 
-    sub_label = f'({n}, {h}, {h})'
-    bar.set_description(f"Testing {sub_label} {d} ({dtype_name})")
+        for label, (func_name, arg) in methods.items():
+            torch.cuda.empty_cache()
+            tmr = benchmark.Timer(
+                stmt=f'{func_name}(images, {arg})',
+                globals={'images': images, func_name: globals()[func_name]},
+                num_threads=torch.get_num_threads(),
+                label=label,
+                sub_label=sub_label,
+                description=f'{d} {dtype_name}'
+            ).adaptive_autorange()
 
-    for label, (func_name, arg) in methods.items():
-        torch.cuda.empty_cache()
-        tmr = benchmark.Timer(
-            stmt=f'{func_name}(images, {arg})',
-            globals={'images': images, func_name: globals()[func_name]},
-            num_threads=torch.get_num_threads(),
-            label=label,
-            sub_label=sub_label,
-            description=f'{d} {dtype_name}'
-        ).adaptive_autorange()
+            results_all.append(tmr)
+            results_by_method[label].append(tmr)
 
-        results_all.append(tmr)
-        results_by_method[label].append(tmr)
+    for label, res in results_by_method.items():
+        benchmark.Compare(res).print()
 
-for label, res in results_by_method.items():
-    benchmark.Compare(res).print()
-
-#%%
+    return results_all
 
 def generate_csv_from_results(results, csv_path="benchmark_results.csv"):
     """
@@ -132,7 +126,18 @@ def generate_csv_from_results(results, csv_path="benchmark_results.csv"):
     df.to_csv(csv_path, index=False)
     return df
 
-df_results = generate_csv_from_results(results_all, csv_path="benchmark_results.csv")
-print("Benchmark results saved to benchmark_results.csv")
+if __name__ == "__main__":
+    
+    H = [64, 128, 256]          # Image heights (and widths)
+    N = [500, 1000, 2000]       # Number of images
+    ndtypes = [torch.float32, torch.float64]
+    ndevices = ["cpu"]
+    if torch.cuda.is_available():
+        ndevices.append("cuda")
+
+    results_all = run_benchmark(H, N, ndtypes, ndevices, methods)
+
+    df_results = generate_csv_from_results(results_all, csv_path="benchmark_results.csv")
+    print("Benchmark results saved to benchmark_results.csv")
 
 
