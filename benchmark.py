@@ -127,8 +127,8 @@ def generate_csv_from_results(results, csv_path="benchmark_results.csv"):
     return df
 
 if __name__ == "__main__":
-    
-    H = [64, 128, 256]          # Image heights (and widths)
+
+    H = [128, 256, 512]          # Image heights (and widths)
     N = [500, 1000, 2000]       # Number of images
     ndtypes = [torch.float32, torch.float64]
     ndevices = ["cpu"]
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
     results_all = run_benchmark(H, N, ndtypes, ndevices, methods)
 
-    df_results = generate_csv_from_results(results_all, csv_path="benchmark_results.csv")
+    df_results = generate_csv_from_results(results_all, csv_path="results.csv")
     print("Benchmark results saved to benchmark_results.csv")
 
 
