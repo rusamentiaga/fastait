@@ -9,6 +9,10 @@ from fastait.ppt import ppt
 from fastait.profiler import TimeProfiler
 from tqdm import tqdm
 from scipy import stats
+from natsort import natsorted
+import numpy as np
+import pandas as pd
+from scipy import stats
 
 def test_benchmark_pct(images, n_components):
     return pct(images, n_components)
@@ -69,75 +73,66 @@ for label, res in results_by_method.items():
     benchmark.Compare(res).print()
 
 #%%
-import numpy as np
-from scipy import stats
 
-def generate_latex_tables_by_method(results):
+def generate_csv_from_results(results, csv_path="benchmark_results.csv"):
     """
-    Generate separate LaTeX tables for each method from torch.utils.benchmark Measurement results.
-    Returns a dictionary with method names as keys and LaTeX table strings as values.
+    Generate a single CSV with all benchmark results (all methods).
+    Each row = (method, input_size, dtype), with one set of columns per device.
+    Sorted by method, then input_size (natural order).
     """
-    # Group results by method
-    tables = {}
+    grouped = {}
+    devices_seen = set()
+
     for t in results:
-        method = t.label  # Extract method name
-        if method not in tables:
-            tables[method] = []
-        tables[method].append(t)
+        method = t.label
+        sub_label = t.sub_label
+        device = t.description.split()[0]   # e.g. "cpu", "cuda"
+        dtype = t.description.split()[1]
+        devices_seen.add(device)
 
-    latex_tables = {}
+        times_s = np.array(t.raw_times) / t.number_per_run
+        n = len(times_s)
+        mean_s = np.mean(times_s)
+        std_s = np.std(times_s, ddof=1)
 
-    for method, method_results in tables.items():
-        # Group results by input size and data type
-        grouped = {}
-        for t in method_results:
-            sub_label = t.sub_label
-            device = t.description.split()[0]
-            dtype = t.description.split()[1]
-            key = (sub_label, dtype)
+        # 95% confidence interval
+        ci = stats.t.ppf(0.975, df=n-1) * std_s / np.sqrt(n)
 
-            times_s = np.array(t.raw_times) / t.number_per_run
-            n = len(times_s)
-            mean_s = np.mean(times_s)
-            std_s = np.std(times_s, ddof=1)  # sample standard deviation
+        # Convert to ms
+        mean_ms = mean_s * 1000
+        ci_ms = ci * 1000
 
-            # 95% confidence interval
-            ci = stats.t.ppf(0.975, df=n-1) * std_s / np.sqrt(n)
+        key = (method, sub_label, dtype)
+        if key not in grouped:
+            grouped[key] = {"method": method, "input_size": sub_label, "dtype": dtype}
 
-            # Convert to milliseconds
-            mean_ms = mean_s * 1000
-            ci_ms = ci * 1000
+        grouped[key][f"{device}_mean_ms"] = round(mean_ms, 3)
+        grouped[key][f"{device}_ci95_ms"] = round(ci_ms, 3)
 
-            if key not in grouped:
-                grouped[key] = {}
-            grouped[key][device] = f"{mean_ms:.3f} ± {ci_ms:.3f}"
+    # Convert to DataFrame
+    df = pd.DataFrame(grouped.values())
 
-        # Build LaTeX table
-        latex = [
-            r"\begin{table}[h!]",
-            r"\centering",
-            fr"\caption{{Benchmark results for {method}.}}",
-            r"\label{{tab:{method.lower()}_comparison}}",
-            r"\begin{tabular}{ccrr}",
-            r"\toprule",
-            r"Input size & Data type & CPU (ms) & GPU (ms) \\",
-            r"\midrule"
-        ]
+    # Ensure all device columns exist
+    for device in devices_seen:
+        for suffix in ["mean_ms", "ci95_ms"]:
+            col = f"{device}_{suffix}"
+            if col not in df.columns:
+                df[col] = np.nan
 
-        for (sub_label, dtype), devices in grouped.items():
-            cpu_mean = devices.get('cpu')
-            cuda_mean = devices.get('cuda')
-            latex.append(f"{sub_label} & {dtype} & {cpu_mean} & {cuda_mean} \\\\")
+    # Build ordered column list
+    cols = ["method", "input_size", "dtype"]
+    for device in sorted(devices_seen):  # keep devices in alphabetic order
+        cols.extend([f"{device}_mean_ms", f"{device}_ci95_ms"])
+    df = df.reindex(columns=cols)
 
-        latex.append(r"\bottomrule")
-        latex.append(r"\end{tabular}")
-        latex.append(r"\end{table}")
+    # Natural sort by method then input_size
+    df = df.iloc[natsorted(df.index, key=lambda i: (df.loc[i, "method"], df.loc[i, "input_size"]))].reset_index(drop=True)
 
-        latex_tables[method] = "\n".join(latex)
+    # Save to CSV
+    df.to_csv(csv_path, index=False)
+    return df
 
-    return latex_tables
+df_results = generate_csv_from_results(results_all, csv_path="benchmark_results.csv")
+print("Benchmark results saved to benchmark_results.csv")
 
-# Usage
-latex_tables = generate_latex_tables_by_method(results_all)
-print(latex_tables["PCT"])
-# print(latex_tables["Kurtosis"])
+
