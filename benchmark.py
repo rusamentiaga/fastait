@@ -44,10 +44,11 @@ def run_benchmark(H, N, ndtypes, ndevices, methods):
     total_iters = len(ndevices) * len(N) * len(H) * len(ndtypes)
     bar = tqdm(product(ndevices, N, H, ndtypes), total=total_iters)
     for d, n, h, t in bar:
-        images = torch.randn(n, h, h, dtype=t, device=d)
         dtype_name = str(t).replace('torch.', '') 
         sub_label = f'({n}, {h}, {h})'
         bar.set_description(f"Testing {sub_label} {d} ({dtype_name})")
+
+        images = torch.randn(n, h, h, dtype=t, device=d)
 
         for label, (func_name, arg) in methods.items():
             torch.cuda.empty_cache()
@@ -84,7 +85,7 @@ def generate_csv_from_results(results, csv_path="benchmark_results.csv"):
         dtype = t.description.split()[1]
         devices_seen.add(device)
 
-        times_s = np.array(t.raw_times) / t.number_per_run
+        times_s = np.array(t.times)
         n = len(times_s)
         mean_s = np.mean(times_s)
         std_s = np.std(times_s, ddof=1)
@@ -128,16 +129,20 @@ def generate_csv_from_results(results, csv_path="benchmark_results.csv"):
 
 if __name__ == "__main__":
 
-    H = [128, 256, 512]          # Image heights (and widths)
+    H = [128, 256, 512]         # Image heights (and widths)
     N = [500, 1000, 2000]       # Number of images
     ndtypes = [torch.float32, torch.float64]
     ndevices = ["cpu"]
     if torch.cuda.is_available():
         ndevices.append("cuda")
 
+    # Fix torch rng
+    torch.manual_seed(42)
+
     results_all = run_benchmark(H, N, ndtypes, ndevices, methods)
 
-    df_results = generate_csv_from_results(results_all, csv_path="results.csv")
-    print("Benchmark results saved to benchmark_results.csv")
+    filename = "results.csv"
+    df_results = generate_csv_from_results(results_all, csv_path=filename)
+    print(f"Benchmark results saved to {filename}")
 
 
