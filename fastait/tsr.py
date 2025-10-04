@@ -20,7 +20,7 @@ def polyfit(t: torch.Tensor, y: torch.Tensor, degree: int):
     X = torch.vander(t, degree + 1, increasing=True)  # (N, degree+1)
     Y = y.reshape(N, -1)  # (N, H*W)
 
-    # Solve for coeffs: faster but unstable
+    # Solve for coeffs using the Moore–Penrose pseudoinverse: faster but unstable
     # X_pinv = torch.linalg.pinv(X)  # (degree+1, N)
     # coeffs = X_pinv @ Y
 
