@@ -79,6 +79,10 @@ def polyder(coeffs: torch.Tensor, order: int = 1) -> torch.Tensor:
     return coeffs[..., order:] * factors
 
 class TSRResult:
+    """
+    Result of Thermographic Signal Reconstruction (TSR).
+    Provides methods for reconstruction and derivatives.
+    """
     def __init__(self, X, coeffs, H, W):
         """
         X: (N, degree+1)
