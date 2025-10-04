@@ -12,5 +12,5 @@ def validate_images(images: torch.Tensor):
     """
     if images.ndim != 3:
         raise ValueError("Input tensor must have shape (N, H, W)")
-    if images.dtype not in [torch.float16, torch.float32, torch.float64]:
+    if not images.is_floating_point():
         raise ValueError("Input tensor must be of float type")
