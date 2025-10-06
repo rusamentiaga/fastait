@@ -14,7 +14,6 @@ def skewness(images: torch.Tensor):
     """
     fastait.validate.validate_images(images)
 
-    N = images.shape[0]
     mean = images.mean(dim=0)
     x0 = images - mean
     
@@ -39,7 +38,10 @@ def kurtosis(images: torch.Tensor):
     
     mean = images.mean(dim=0)
     x0 = images - mean
-    s2 = torch.mean(x0**2, dim=0)      # biased variance
+
+    # Biased second and fourth moments
+    s2 = torch.mean(x0**2, dim=0)
     m4 = torch.mean(x0**4, dim=0)
-    k = m4 / (s2**2)
-    return k
+
+    kurt = m4 / (s2**2)
+    return kurt
