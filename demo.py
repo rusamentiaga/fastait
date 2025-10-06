@@ -8,10 +8,10 @@ import torch
 import numpy as np
 import fastait.io
 import fastait.data
+from fastait.statistics import skewness, kurtosis
+from fastait.ppt import ppt
 from fastait.tsr import tsr
 from fastait.pct import pct
-from fastait.ppt import ppt
-from fastait.statistics import skewness, kurtosis
 from fastait.plot import show, plot_image_grid
 from fastait.profiler import TimeProfiler
 
@@ -23,6 +23,8 @@ colors = np.loadtxt('misc/rain.csv', delimiter=',') / 255.0
 cmap = ListedColormap(colors)
 
 #%%
+# Run ./download_test_data.sh to download the data first
+# Load data
 images = fastait.io.load_csv_folder("data/CFRP-006_facq-145Hz_s-Front_Img-2000", 
                                     dtype=torch.float32, verbose=True)
 print(f"Loaded images tensor shape: {images.shape}, dtype: {images.dtype}")
@@ -74,7 +76,7 @@ show(data_kurtosis, cmap=cmap)
 #%%
 data = cooling.to(torch.float32)
 with TimeProfiler("PCT") as tp:
-    data_pct = pct(data, 50)
+    data_pct = pct(data, n_components=50)
 
 plot_image_grid(data_pct.cpu(), cmap="gray", start_index=0, num_images=8, images_per_row=4, 
                 fig_width=8, row_height=2, step=1)
