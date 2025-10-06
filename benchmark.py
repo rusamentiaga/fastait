@@ -30,14 +30,6 @@ def test_benchmark_kurtosis(images):
 def test_benchmark_ppt(images):
     return ppt(images)
 
-methods = {
-    "Skewness": ("test_benchmark_skewness", ""),
-    "Kurtosis": ("test_benchmark_kurtosis", ""),
-    "PCT": ("test_benchmark_pct", 50),
-    "TSR": ("test_benchmark_tsr", 5),
-    "PPT": ("test_benchmark_ppt", ""),
-}
-
 def run_benchmark(H, N, ndtypes, ndevices, methods):
     results_all = []
     results_by_method = {m: [] for m in methods}
@@ -129,12 +121,20 @@ def generate_csv_from_results(results, csv_path="benchmark_results.csv"):
 
 if __name__ == "__main__":
 
+    # Benchmark parameters to vary
     H = [128, 256, 512]         # Image heights (and widths)
     N = [500, 1000, 2000]       # Number of images
     ndtypes = [torch.float32, torch.float64]
     ndevices = ["cpu"]
     if torch.cuda.is_available():
         ndevices.append("cuda")
+    methods = {
+        "Skewness": ("test_benchmark_skewness", ""),
+        "Kurtosis": ("test_benchmark_kurtosis", ""),
+        "PCT": ("test_benchmark_pct", 50),
+        "TSR": ("test_benchmark_tsr", 5),
+        "PPT": ("test_benchmark_ppt", ""),
+    } 
 
     # Fix torch rng
     torch.manual_seed(42)
@@ -144,5 +144,3 @@ if __name__ == "__main__":
     filename = "results.csv"
     df_results = generate_csv_from_results(results_all, csv_path=filename)
     print(f"Benchmark results saved to {filename}")
-
-
