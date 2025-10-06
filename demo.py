@@ -1,4 +1,12 @@
-#%%
+# #%%
+# This script demonstrates the usage of various post-processing techniques on a sequence of images.
+# It includes loading image data, normalizing, extracting cooling effects, and applying post-processing
+# methods such as Skewness, Kurtosis, Pulse Phase Thermography (PPT),
+# Principal Component Thermography (PCT), Thermographic Signal Reconstruction (TSR)
+# The results are visualized using matplotlib and seaborn.
+
+# Each cell can be run independently in a Jupyter notebook or similar environment.
+
 %matplotlib widget
 %load_ext autoreload
 %autoreload 2
