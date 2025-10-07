@@ -41,7 +41,8 @@ images = images[:, roi_margin_top:-roi_margin_bottom, roi_margin_left:-roi_margi
 print(f"Cropped images to remove margin: new shape {images.shape}")
 images_normalized = fastait.data.normalize_percentile(images, 3.0, 100.0)
 cooling = fastait.data.extract_cooling(images)
-cooling = cooling.to("cuda")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+cooling = cooling.to(device)
 
 #%% Visualize raw images
 show(images, cmap=cmap)
@@ -81,16 +82,14 @@ with TimeProfiler("Kurtosis") as tp:
 show(data_kurtosis, cmap=cmap)
 
 #%% PPT
-data = cooling.to(torch.float32)
 with TimeProfiler("PPT") as tp:
-    data_phase = ppt(data)
+    data_phase = ppt(cooling)
 
 show(data_phase, cmap=cmap)
 
 #%% PCT
-data = cooling.to(torch.float32)
 with TimeProfiler("PCT") as tp:
-    data_pct = pct(data, n_components=50)
+    data_pct = pct(cooling, n_components=50)
 
 plot_image_grid(data_pct.cpu(), cmap="gray", start_index=0, num_images=8, images_per_row=4, 
                 fig_width=8, row_height=2, step=1)
@@ -98,9 +97,8 @@ plot_image_grid(data_pct.cpu(), cmap="gray", start_index=0, num_images=8, images
 show(data_pct, cmap=cmap)
 
 #%% TSR
-data = cooling.to(torch.float32)
 with TimeProfiler("TSR") as tp:
-    tsr_res = tsr(data, degree=7)
+    tsr_res = tsr(cooling, degree=7)
     data_tsr = tsr_res.reconstruction()
     data_der1 = tsr_res.first_derivative()
     data_der2 = tsr_res.second_derivative()
@@ -114,7 +112,7 @@ show(data_der2, cmap=cmap)
 data_tsr = tsr_res.reconstruction()
 i = cooling.shape[1] // 2
 j = cooling.shape[2] // 2
-plt.figure()
+fig, ax = plt.subplots()
 plt.plot(cooling[:, i, j].cpu().numpy(), 'k.', label='Noisy')
 plt.plot(data_tsr[:, i, j].cpu().numpy(), 'r-', label='Fitted')
 plt.title(f'Pixel ({i},{j})')
