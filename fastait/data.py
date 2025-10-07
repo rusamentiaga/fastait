@@ -34,11 +34,11 @@ def normalize_percentile(images: torch.Tensor, percentile_low: float, percentile
 
 def extract_cooling(images: torch.Tensor) -> torch.Tensor:
     """
-    Extract cooling events from a stack of images by thresholding the mean pixel value.
+    Extract cooling from a stack of images by thresholding the mean pixel value.
 
     Args:
         images (torch.Tensor): Tensor of shape (N, H, W)
-        """
+    """
     fastait.validate.validate_images(images)
 
     mean_per_image = images.mean(dim=(1, 2))
@@ -47,3 +47,28 @@ def extract_cooling(images: torch.Tensor) -> torch.Tensor:
         raise ValueError("No cooling data found after the peak mean pixel value.")
 
     return images[max_index+1:]
+
+def extract_heating(images: torch.Tensor, threshold = 0.01) -> torch.Tensor:
+    """
+    Extract heating from a stack of images by thresholding the mean pixel value.
+
+    Args:
+        images (torch.Tensor): Tensor of shape (N, H, W)
+    """
+    fastait.validate.validate_images(images)
+
+    mean_per_image = images.mean(dim=(1, 2))
+    
+    endpos =  mean_per_image.argmax().item()
+    dif = torch.abs(torch.diff(mean_per_image))
+
+    mask = dif > threshold
+    above = torch.nonzero(mask, as_tuple=False)
+    print(f"Found {above.numel()} change points above threshold {threshold}.")
+    print(dif[0:10])
+    print(above[0:10])
+
+    startpos = above[0].item() if above.numel() > 0 else 0
+    print(f"Extracted heating from index {startpos} to {endpos}, total {endpos - startpos} images.")
+    
+    return images[startpos:endpos]
