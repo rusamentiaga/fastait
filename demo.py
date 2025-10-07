@@ -1,4 +1,4 @@
-# #%%
+#%%
 # This script demonstrates the usage of various post-processing techniques on a sequence of images.
 # It includes loading image data, normalizing, extracting cooling effects, and applying post-processing
 # methods such as Skewness, Kurtosis, Pulse Phase Thermography (PPT),
@@ -30,31 +30,30 @@ from matplotlib.colors import ListedColormap
 colors = np.loadtxt('misc/rain.csv', delimiter=',') / 255.0 
 cmap = ListedColormap(colors)
 
-#%%
+#%% Load Data
 # Run ./download_test_data.sh to download the data first
-# Load data
+# images is a tensor of shape (num_images, height, width)
 images = fastait.io.load_csv_folder("data/CFRP-006_facq-145Hz_s-Front_Img-2000", 
                                     dtype=torch.float32, verbose=True)
 print(f"Loaded images tensor shape: {images.shape}, dtype: {images.dtype}")
-roi_margin_top, roi_margin_left = 20, 20
-roi_margin_bottom, roi_margin_right = 40, 20
+roi_margin_top, roi_margin_left, roi_margin_bottom, roi_margin_right = 20, 20, 40, 20
 images = images[:, roi_margin_top:-roi_margin_bottom, roi_margin_left:-roi_margin_right].contiguous()
 print(f"Cropped images to remove margin: new shape {images.shape}")
 images_normalized = fastait.data.normalize_percentile(images, 3.0, 100.0)
 cooling = fastait.data.extract_cooling(images)
 cooling = cooling.to("cuda")
 
-#%%
+#%% Visualize raw images
 show(images, cmap=cmap)
 
-#%%
+#%% Visualize a single image
 show(images[100], cmap=cmap)
 
-#%%
+#%% Visualize a grid of cooling images
 plot_image_grid(cooling, cmap="gray", start_index=0, num_images=12, images_per_row=4, 
                 fig_width=8, row_height=2, step=30)
 
-#%%
+#%% Plot mean pixel value per image
 mean_per_image = images.mean(dim=(1, 2)).cpu().numpy()
 t = torch.arange(len(mean_per_image)).numpy()
 
@@ -69,19 +68,26 @@ ax.grid(True)
 fig.tight_layout()
 plt.show()
 
-#%%
+#%% Apply post-processing techniques: Skewness
 with TimeProfiler("Skewness") as tp:
     data_skewness = skewness(cooling)
 
 show(data_skewness, cmap=cmap)
 
-#%%
+#%% Kurtosis
 with TimeProfiler("Kurtosis") as tp:
     data_kurtosis = kurtosis(cooling)
 
 show(data_kurtosis, cmap=cmap)
 
-#%%
+#%% PPT
+data = cooling.to(torch.float32)
+with TimeProfiler("PPT") as tp:
+    data_phase = ppt(data)
+
+show(data_phase, cmap=cmap)
+
+#%% PCT
 data = cooling.to(torch.float32)
 with TimeProfiler("PCT") as tp:
     data_pct = pct(data, n_components=50)
@@ -91,7 +97,7 @@ plot_image_grid(data_pct.cpu(), cmap="gray", start_index=0, num_images=8, images
 
 show(data_pct, cmap=cmap)
 
-#%%
+#%% TSR
 data = cooling.to(torch.float32)
 with TimeProfiler("TSR") as tp:
     tsr_res = tsr(data, degree=7)
@@ -104,10 +110,10 @@ plot_image_grid(data_der2.cpu(), cmap="gray", start_index=0, num_images=8, image
 
 show(data_der2, cmap=cmap)
 
-#%%
+#%% TSR fit visualization
 data_tsr = tsr_res.reconstruction()
-i = 0
-j = 0
+i = cooling.shape[1] // 2
+j = cooling.shape[2] // 2
 plt.figure()
 plt.plot(cooling[:, i, j].cpu().numpy(), 'k.', label='Noisy')
 plt.plot(data_tsr[:, i, j].cpu().numpy(), 'r-', label='Fitted')
@@ -115,10 +121,3 @@ plt.title(f'Pixel ({i},{j})')
 plt.legend()
 plt.tight_layout()
 plt.show()
-
-#%%
-data = cooling.to(torch.float32)
-with TimeProfiler("PPT") as tp:
-    data_phase = ppt(data)
-
-show(data_phase, cmap=cmap)
