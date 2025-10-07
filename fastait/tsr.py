@@ -83,7 +83,7 @@ class TSRResult:
     Result of Thermographic Signal Reconstruction (TSR).
     Provides methods for reconstruction and derivatives.
     """
-    def __init__(self, X, coeffs, H, W):
+    def __init__(self, X, coeffs, H, W, log_fit):
         """
         X: (N, degree+1)
         coeffs: (degree+1, H*W)
@@ -94,30 +94,34 @@ class TSRResult:
         self.H = H
         self.W = W
         self.N = X.shape[0]
+        self.log_fit = log_fit
 
     def reconstruction(self):
         """
         Reconstructed images in original domain
         """
-        log_reconstruction = (self.X @ self.coeffs).reshape(self.N, self.H, self.W)
-        return torch.exp(log_reconstruction)
+        reconstruction = (self.X @ self.coeffs).reshape(self.N, self.H, self.W)
+        if self.log_fit:
+            return torch.exp(reconstruction)
+        else:
+            return reconstruction
     
     def derivative(self, order=1):
         """
-        Derivative in log domain
+        Derivative
         """
         coeffs_der_flat = polyder(self.coeffs.T, order=order).T
         return (self.X[:, :coeffs_der_flat.shape[0]] @ coeffs_der_flat).reshape(self.N, self.H, self.W)
     
     def first_derivative(self):
         """ 
-        First derivative in log domain
+        First derivative
         """
         return self.derivative(order=1)
     
     def second_derivative(self):
         """
-        Second derivative in log domain
+        Second derivative
         """
         return self.derivative(order=2)
     
@@ -127,11 +131,12 @@ class TSRResult:
         """
         return self.coeffs.reshape(self.N, self.H, self.W)
 
-def tsr(images: torch.Tensor, degree: int = 5):
+def tsr(images: torch.Tensor, log_fit = True, degree: int = 5):
     """
     Perform Thermographic Signal Reconstruction (TSR) on a stack of images.
     Args:
         images (torch.Tensor): Input tensor of shape (N, H, W)
+        log_fit (bool): Whether to fit in log domain
         degree (int): Polynomial degree for fitting in log domain
     Returns:
         TSRResult: Object containing fit results and methods for reconstruction and derivatives
@@ -141,12 +146,12 @@ def tsr(images: torch.Tensor, degree: int = 5):
 
     # Time axis in log domain (1..N)
     t = torch.arange(1, N + 1, device=images.device, dtype=images.dtype)
-    log_t = torch.log(t)
 
-    # Log of signal
-    eps = torch.finfo(images.dtype).eps
-    log_images = torch.log(torch.clamp(images, min=eps))
+    if log_fit:
+        t  = torch.log(t)
+        eps = torch.finfo(images.dtype).eps
+        images = torch.log(torch.clamp(images, min=eps))
 
     # Polynomial fit
-    X, coeffs_flat = polyfit(log_t, log_images, degree)  # X: (N, degree+1), coeffs_flat: (degree+1, H*W)
-    return TSRResult(X, coeffs_flat, H, W)
+    X, coeffs_flat = polyfit(t, images, degree)  # X: (N, degree+1), coeffs_flat: (degree+1, H*W)
+    return TSRResult(X, coeffs_flat, H, W, log_fit)
