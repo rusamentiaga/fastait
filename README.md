@@ -8,8 +8,8 @@ It provides optimized implementations of several widely used thermographic analy
 The project includes functionalities for:
 - Loading and managing thermographic image sequences  
 - Normalizing and preprocessing thermal data  
-- Extracting cooling  
-- Applying advanced post-processing techniques:
+- Extracting heating and cooling
+- Applying post-processing techniques:
   - **Skewness**
   - **Kurtosis**
   - **Pulse Phase Thermography (PPT)**
