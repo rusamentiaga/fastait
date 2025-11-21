@@ -58,6 +58,24 @@ See `demo.py` for additional examples.
 
 Use `./download_test_data.sh` to download example datasets.
 
+### View the sequences
+
+To interactively browse through a thermographic image sequence, the `show` function can be used.
+
+```python
+%matplotlib widget
+
+show(images)
+```
+
+Notes:
+
+* `images` should be a 2D or 3D torch.Tensor of shape (H, W) for a single image or (N, H, W) for a sequence.
+
+* A slider will appear below the image if multiple frames are provided.
+
+* Make sure ipympl is installed for interactive plotting:
+
 ### Benchmarking
 
 ```bash
