@@ -18,7 +18,8 @@ dependencies = [
   "numpy==2.2.3",
   "tqdm==4.67.1",
   "natsort==8.4.0",
-  "matplotlib==3.9.2"
+  "matplotlib==3.9.2",
+  "ipywidgets==8.1.7"
 ]
 
 [project.urls]
