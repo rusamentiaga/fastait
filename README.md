@@ -18,19 +18,21 @@ The project includes functionalities for:
 
 ## Installation
 
+### Local installation (development mode)
+
 ```bash
 git clone https://github.com/yourusername/fastait.git
 cd fastait
 pip install -r requirements.txt
 ```
 
-## Usage
-
-### Benchmarking
+### Install directly from GitHub (recommended)
 
 ```bash
-python benchmark.py
+pip install git+https://github.com/rusamentiaga/fastait.git
 ```
+
+## Usage
 
 ### Post-processing methods
 
@@ -56,7 +58,13 @@ See `demo.py` for additional examples.
 
 Use `./download_test_data.sh` to download example datasets.
 
-## Results
+### Benchmarking
+
+```bash
+python benchmark.py
+```
+
+## Benchmark results
 
 Benchmark results obtained on an **NVIDIA RTX 5090 GPU** with an **AMD Ryzen 9 9950X3D CPU**  
 for **2000 frames of size 512 × 512 pixels** (≈524 megapixels total):
