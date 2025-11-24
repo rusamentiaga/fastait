@@ -46,7 +46,6 @@ from fastait.tsr import tsr
 data_skewness = skewness(data)
 data_kurtosis = kurtosis(data)
 data_phase = ppt(data)
-data_pct = pct(data, 50)
 data_pct = pct(data, n_components=50)
 tsr_res = tsr(data, degree=5)
 data_tsr = tsr_res.reconstruction()
