@@ -99,6 +99,7 @@ show(data_pct, cmap=cmap)
 #%% TSR
 with TimeProfiler("TSR") as tp:
     tsr_res = tsr(cooling, degree=7)
+    coefficients = tsr_res.coefficients()
     data_tsr = tsr_res.reconstruction()
     data_der1 = tsr_res.first_derivative()
     data_der2 = tsr_res.second_derivative()

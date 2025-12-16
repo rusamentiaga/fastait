@@ -129,7 +129,7 @@ class TSRResult:
         """
         Polynomial coefficients in original image shape (N, H, W)
         """
-        return self.coeffs.reshape(self.N, self.H, self.W)
+        return self.coeffs.reshape(self.coeffs.shape[0], self.H, self.W)
 
 def tsr(images: torch.Tensor, log_fit = True, degree: int = 5):
     """
