@@ -10,11 +10,15 @@ DEST_DIR="data"
 mkdir -p "$DEST_DIR"
 
 # Download the dataset
-ZIP_URL="https://prod-dcd-datasets-cache-zipfiles.s3.eu-west-1.amazonaws.com/v4knrwgj9y-2.zip"
-ZIP_FILE="${ZIP_URL##*/}"  # Extract filename from URL
-
+ZIP_URL="https://data.mendeley.com/public-api/zip/v4knrwgj9y/download/2"
+ZIP_FILE="data.zip"  # Extract filename from URL
+ZIP_CHECKSUM="688d8680ee619a5e373163c7d954b53a1761174c0bbdfbbfb729d378450bf343"
 echo "Downloading $ZIP_FILE..."
 wget -O "$ZIP_FILE" "$ZIP_URL"
+
+# Verify the checksum
+echo "Verifying checksum..."
+echo "$ZIP_CHECKSUM  $ZIP_FILE" | sha256sum -c -
 
 # Extract the dataset
 echo "Extracting dataset to '$DEST_DIR'..."
